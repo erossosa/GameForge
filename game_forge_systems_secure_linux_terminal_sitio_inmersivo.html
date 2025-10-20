@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GameForge Systems — Secure Linux Terminal</title>
+    <style>
+      :root {
+        --bg: #0e1116;
+        --ink: #cde7da;
+        --neon: #00d084;
+        --cyan: #45d;
+        --muted: #9aa1aa;
+        --panel: #0b0f14;
+        --accent: #00ffa3;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1400px 900px at 15% -20%,
+            #182330 0%,
+            var(--bg) 45%
+          )
+          fixed;
+        color: var(--ink);
+        font: 16px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 28px auto;
+        padding: 0 16px;
+      }
+      .crt {
+        position: relative;
+      }
+      .crt:before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.015) 0 2px,
+          transparent 2px 4px
+        );
+      }
+
+      .frame {
+        border: 1px solid #233042;
+        border-radius: 12px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.03),
+          rgba(255, 255, 255, 0)
+        );
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      }
+      .titlebar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #233042;
+        background: #0a0f14;
+        border-radius: 12px 12px 0 0;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .r {
+        background: #ff5f56;
+      }
+      .y {
+        background: #ffbd2e;
+      }
+      .g {
+        background: #27c93f;
+      }
+      .title {
+        color: #9db2cf;
+        font-size: 13px;
+      }
+
+      .screen {
+        padding: 18px;
+        min-height: 62vh;
+      }
+      .prompt {
+        color: var(--neon);
+      }
+      .cursor {
+        display: inline-block;
+        width: 9px;
+        background: var(--neon);
+        animation: blink 1s steps(1, end) infinite;
+        margin-left: 2px;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .sys {
+        color: #a7ffcf;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .box {
+        border: 1px solid #274055;
+        border-radius: 10px;
+        padding: 12px;
+        margin: 10px 0;
+        background: rgba(0, 208, 132, 0.05);
+      }
+      .ascii {
+        color: var(--neon);
+        text-shadow: 0 0 12px rgba(0, 208, 132, 0.5);
+      }
+      .btns {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      button,
+      a.btn {
+        appearance: none;
+        border: 1px solid #1f2f3f;
+        background: #0f1a24;
+        color: #e7fff6;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+      }
+      button.primary,
+      a.primary {
+        background: var(--neon);
+        color: #062a1f;
+        font-weight: 800;
+        border: 0;
+        box-shadow: 0 0 22px rgba(0, 208, 132, 0.25);
+      }
+      a.btn {
+        text-decoration: none;
+      }
+
+      footer {
+        margin: 12px 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      /* print */
+      @media print {
+        body {
+          background: #fff;
+          color: #000;
+        }
+        .frame {
+          border: 1px solid #000;
+          box-shadow: none;
+        }
+        .titlebar {
+          background: #fff;
+          border-bottom: 1px solid #000;
+        }
+        .dot {
+          display: none;
+        }
+        .cursor {
+          display: none;
+        }
+        .box {
+          background: #fff;
+          border: 1px solid #000;
+        }
+        button,
+        a.btn {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap crt">
+      <div class="frame">
+        <div class="titlebar">
+          <span class="dot r"></span><span class="dot y"></span
+          ><span class="dot g"></span>
+          <span class="title">GameForge Systems — Secure Linux Terminal</span>
+        </div>
+        <div id="screen" class="screen" aria-live="polite"></div>
+      </div>
+      <footer>
+        © GameForge Studios · Área de Sistemas — Simulación didáctica (UTU ISBO
+        · Prof. Eros Sosa)
+      </footer>
+    </div>
+
+    <script>
+      // === Config ===
+      const BITACORA_URL = "bitacora.html"; // 👉 cambiá esto por la ruta real de tu bitácora (o deja un nombre de archivo si está en la misma carpeta)
+
+      // === Utilidades de tipeo ===
+      const screen = document.getElementById("screen");
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      function el(tag, cls) {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        return n;
+      }
+      async function typeLine(
+        text,
+        { cls = "", speed = 12, prompt = false } = {}
+      ) {
+        const line = el("div", cls);
+        if (prompt) {
+          const p = el("span", "prompt");
+          p.textContent = "$ ";
+          line.appendChild(p);
+        }
+        const span = el("span");
+        line.appendChild(span);
+        const cur = el("span", "cursor");
+        line.appendChild(cur);
+        screen.appendChild(line);
+        screen.scrollTop = screen.scrollHeight;
+        for (let i = 0; i < text.length; i++) {
+          span.textContent += text[i];
+          await sleep(speed);
+        }
+        cur.remove();
+      }
+      function hr() {
+        const d = el("div");
+        d.innerHTML = "\n";
+        screen.appendChild(d);
+      }
+
+      // === Secuencia sin temporizador ===
+      async function run() {
+        // Login ficticio
+        await typeLine("login employee_2MM", { prompt: true, speed: 15 });
+        await sleep(250);
+        await typeLine("Access Granted ✓", { cls: "sys" });
+        await typeLine("Initializing GameForge Systems v1.4...", {
+          cls: "muted",
+          speed: 12,
+        });
+        hr();
+
+        // ASCII logo
+        const logo = el("pre", "ascii");
+        logo.textContent = `
+   ██████  █████  ███    ███ ███████ ███████ ██████   ██████  ███████ 
+  ██      ██   ██ ████  ████ ██      ██      ██   ██ ██    ██ ██      
+  ██  ███ ███████ ██ ████ ██ █████   █████   ██████  ██    ██ █████   
+  ██   ██ ██   ██ ██  ██  ██ ██      ██      ██   ██ ██    ██ ██      
+   ██████ ██   ██ ██      ██ ███████ ███████ ██████   ██████  ███████ 
+    `;
+        screen.appendChild(logo);
+
+        await typeLine(
+          "[SYSMSG] Bienvenido al entorno interno de GameForge Systems.",
+          { cls: "sys" }
+        );
+        await typeLine(
+          "[SYSMSG] Este briefing es confidencial. No compartas las credenciales.",
+          { cls: "sys" }
+        );
+        hr();
+
+        // Briefing (narrativa)
+        await typeLine("GAMEFORGE SYSTEMS INTERNAL BRIEFING");
+        await typeLine(
+          "> El estudio expandió su equipo técnico (devs y testers)."
+        );
+        await typeLine(
+          "> Necesitamos automatizar la creación de usuarios y grupos en servidores Linux."
+        );
+        await typeLine(
+          "> Tu misión: DISEÑAR un script Bash con MENÚ CASE que ejecute estas tareas."
+        );
+        await typeLine(
+          "> Herramientas: terminal, nano y manuales del sistema."
+        );
+        hr();
+
+        // Historias de usuario & seguridad (resumen)
+        const box1 = el("div", "box");
+        box1.innerHTML = `
+      <strong>Historias de usuario</strong><br>
+      – Admin: crear grupos y usuarios sin olvidar pasos;verificar estado.<br>
+      – Seguridad: nombres válidos (minúsculas), mensajes legibles para auditoría, evitar acciones peligrosas.`;
+        screen.appendChild(box1);
+
+        const box2 = el("div", "box");
+        box2.innerHTML = `
+      <strong>Requisitos del menú (comportamiento)</strong><br>
+      [1] Opciones claras: crear grupo · crear usuario · salir.<br>
+      [2] 1)Crear usuario 2) Crear grupo 3) Salir`;
+        screen.appendChild(box2);
+
+        const box3 = el("div", "box");
+        box3.innerHTML = `
+      <strong>Criterios de aceptación (caja negra)</strong><br>
+      El menú debe crear usuarios y grupos correctamente`;
+        screen.appendChild(box3);
+
+        hr();
+        await typeLine(
+          "> Recuerda: los mejores admins no memorizan comandos; diseñan soluciones.",
+          { cls: "muted" }
+        );
+        await typeLine("> Documentá tu progreso en la bitácora oficial.", {
+          cls: "muted",
+        });
+
+        // Botones
+        const btns = el("div", "btns");
+        const start = el("a", "btn primary");
+        start.textContent = "Abrir Bitácora Oficial 📝";
+        start.href = "https://erossosa.github.io/bitacora/";
+        start.target = "_blank";
+        start.rel = "noopener";
+        const manuals = el("a", "btn"); // Usa 'a' para un enlace, 'btn' para el estilo secundario
+        manuals.textContent = "Manuales del Sistema";
+        manuals.href = "https://erossosa.github.io/bitacora/manual.html"; // Reemplaza '#' con el enlace real a tus manuales
+        manuals.target = "_blank";
+        manuals.rel = "noopener";
+        const copy = el("button", "btn");
+        copy.textContent = "Copiar briefing";
+        btns.appendChild(start);
+        btns.appendChild(manuals);
+        btns.appendChild(copy);
+        screen.appendChild(btns);
+
+        copy.addEventListener("click", async () => {
+          const text = screen.innerText.replace(/\n\n+/g, "\n");
+          try {
+            await navigator.clipboard.writeText(text);
+            copy.textContent = "¡Briefing copiado! ✓";
+            setTimeout(() => (copy.textContent = "Copiar briefing"), 1800);
+          } catch (e) {
+            copy.textContent = "No se pudo copiar";
+          }
+        });
+
+        hr();
+        await typeLine("END OF TRANSMISSION _");
+      }
+
+      run();
+    </script>
+  </body>
+</html>
