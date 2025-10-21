@@ -204,7 +204,7 @@
         <div id="screen" class="screen" aria-live="polite"></div>
       </div>
       <footer>
-        © GameForge Studios · Área de Sistemas — Simulación didáctica (UTU ISBO
+        © GameForge Studios · Área de Sistemas — (UTU ISBO
         · Prof. Eros Sosa)
       </footer>
     </div>
@@ -303,7 +303,7 @@
         box1.innerHTML = `
       <strong>Historias de usuario</strong><br>
       – Admin: crear grupos y usuarios sin olvidar pasos;verificar estado.<br>
-      – Seguridad: nombres válidos (minúsculas), mensajes legibles para auditoría, evitar acciones peligrosas.`;
+      – Seguridad: nombres válidos (minúsculas).`;
         screen.appendChild(box1);
 
         const box2 = el("div", "box");
@@ -315,7 +315,7 @@
 
         const box3 = el("div", "box");
         box3.innerHTML = `
-      <strong>Criterios de aceptación (caja negra)</strong><br>
+      <strong>Criterios de aceptación </strong><br>
       El menú debe crear usuarios y grupos correctamente`;
         screen.appendChild(box3);
 
@@ -335,9 +335,9 @@
         start.href = "https://erossosa.github.io/bitacora/";
         start.target = "_blank";
         start.rel = "noopener";
-        const manuals = el("a", "btn"); // Usa 'a' para un enlace, 'btn' para el estilo secundario
+        const manuals = el("a", "btn"); //ndario
         manuals.textContent = "Manuales del Sistema";
-        manuals.href = "https://erossosa.github.io/bitacora/manual.html"; // Reemplaza '#' con el enlace real a tus manuales
+        manuals.href = "https://erossosa.github.io/bitacora/manual.html"; // manuales
         manuals.target = "_blank";
         manuals.rel = "noopener";
         const copy = el("button", "btn");
